@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: secureai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=secureai
+      - POSTGRES_PASSWORD=secureai_dev_2024
+      - POSTGRES_DB=secureai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - APP_DEBUG=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend/results:/app/results
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: secureai-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: secureai-postgres
+    environment:
+      POSTGRES_USER: secureai
+      POSTGRES_PASSWORD: secureai_dev_2024
+      POSTGRES_DB: secureai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secureai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: secureai-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  mlflow:
+    image: python:3.11-slim
+    container_name: secureai-mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      bash -c "pip install mlflow psycopg2-binary &&
+               mlflow server
+               --backend-store-uri postgresql://secureai:secureai_dev_2024@postgres:5432/mlflow
+               --default-artifact-root /mlflow/artifacts
+               --host 0.0.0.0
+               --port 5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - mlflow-artifacts:/mlflow/artifacts
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  mlflow-artifacts:

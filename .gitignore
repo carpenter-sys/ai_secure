@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ML artifacts
+models/checkpoints/
+models/*.pt
+models/*.pth
+models/*.onnx
+!models/.gitkeep
+mlruns/
+*.mlflow
+
+# Data
+data/raw/
+data/processed/
+*.csv
+*.parquet
+!data/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Docker volumes
+pgdata/
+redis-data/
+
+# Test & Coverage
+htmlcov/
+.coverage
+.pytest_cache/
